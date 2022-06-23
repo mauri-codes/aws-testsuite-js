@@ -1,0 +1,16 @@
+{
+  "name": "aws-testsuite",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mauri1789/aws-testsuite-js.git"
+  },
+  "author": "Mauricio Alarcon",
+  "license": "ISC",
+  "homepage": "https://github.com/mauri1789/aws-testsuite-js#readme",
+  "devDependencies": {
+    "typescript": "^4.7.4"
+  }
+}
