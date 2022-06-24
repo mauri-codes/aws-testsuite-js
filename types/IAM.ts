@@ -1,5 +1,10 @@
 import { Tag } from "@aws-sdk/client-iam"
 
+export interface PolicyIdentifier {
+    policyArn?: string
+    policyName?: string
+}
+
 export interface RoleExpectation {
     RoleData?: {
         Path?: string
