@@ -1,4 +1,5 @@
 import { Tag } from "@aws-sdk/client-iam"
+import { ManagedPolicy } from "../resources/IAM/Policy"
 
 export interface PolicyIdentifier {
     policyArn?: string
@@ -17,5 +18,26 @@ export interface RoleExpectation {
         Tags?: Tag
     }
     InlinePolicies?: string[]
-    ManagedPolicies?: string[]
+    ManagedPolicies?: ManagedPolicy[]
+}
+
+export interface ManagedPolicyExpectation {
+    PolicyData?: {
+        PolicyId?: string
+        Path?: string
+        DefaultVersionId?: string
+        AttachmentCount?: number
+        Description?: string
+    }
+    PolicyDocumentStatements?: {
+        Id: string
+        Effect: "Allow" | "Deny"
+        Action: string | string[]
+        Resource: string | string[]
+    }[]
+    PolicyDocumentEvaluation?: {
+        Effect: "Allow" | "Deny"
+        Action: string | string[]
+        Resource: string | string[]        
+    }[]
 }

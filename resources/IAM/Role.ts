@@ -8,12 +8,14 @@ import {
     ListRolePoliciesCommand,
     ListAttachedRolePoliciesCommand
 } from "@aws-sdk/client-iam";
+import { ManagedPolicy } from "./Policy";
 
 export class Role extends IAMResource {
     roleName: string
     roleExpectations: RoleExpectation | undefined
     roleData: RoleData | undefined
-    managedPolicies: AttachedPolicy[] | undefined
+    managedPoliciesList: AttachedPolicy[] | undefined
+    managedPolicies: ManagedPolicy[] | undefined
     inlinePolicies: string[] | undefined
     constructor(environment: AWSEnvironment, roleName:string, expectations?: RoleExpectation) {
         super(environment)
@@ -24,15 +26,21 @@ export class Role extends IAMResource {
         const params = {RoleName: this.roleName}
         const requestOutput = await this.client.send(new GetRoleCommand(params))
         this.roleData = requestOutput.Role
-        console.log(this.roleData);
         
         return this.roleData
     }
-    async getManagedPolicies() {
+    async getManagedPoliciesList() {
         const params = {RoleName: this.roleName}
         const requestOutput = await this.client.send(new ListAttachedRolePoliciesCommand(params))
-        this.managedPolicies = requestOutput.AttachedPolicies
-        return this.managedPolicies
+        this.managedPoliciesList = requestOutput.AttachedPolicies
+        return this.managedPoliciesList
+    }
+    async getManagedPolicies() {
+        if(this.roleExpectations?.ManagedPolicies) {
+            const policiesRequests = this.roleExpectations.ManagedPolicies.map((policy) => policy.load())
+            await Promise.all(policiesRequests)
+            this.managedPolicies = this.roleExpectations.ManagedPolicies
+        }
     }
     async getInlinePolicies() {
         const params = {RoleName: this.roleName}
@@ -41,7 +49,7 @@ export class Role extends IAMResource {
         return this.inlinePolicies
     } 
     async load() {
-        let requests = []
+        let requests: Promise<any>[] = []
         if (this.roleExpectations?.RoleData) {
             requests.push(this.getRoledData())
         }
@@ -49,11 +57,9 @@ export class Role extends IAMResource {
             requests.push(this.getInlinePolicies())
         }
         if (this.roleExpectations?.ManagedPolicies) {
+            requests.push(this.getManagedPoliciesList())
             requests.push(this.getManagedPolicies())
         }
-        const [first, second, third] = await Promise.all(requests)
-        console.log(first);
-        console.log(second);
-        console.log(third);
+        await Promise.all(requests)
     }
 }

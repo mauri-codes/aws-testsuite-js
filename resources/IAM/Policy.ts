@@ -5,16 +5,22 @@ import {
     GetPolicyCommand,
     GetPolicyVersionCommand
 } from "@aws-sdk/client-iam";
-import { PolicyIdentifier } from "../../types/IAM";
+import { ManagedPolicyExpectation, PolicyIdentifier } from "../../types/IAM";
 
 export class ManagedPolicy extends IAMResource {
     arn: string | undefined
     name: string | undefined
     policyData: Policy | undefined
     policyDocument: PolicyVersion | undefined
-    constructor(environment: AWSEnvironment, identifier: PolicyIdentifier) {
+    policyExpectations: ManagedPolicyExpectation | undefined
+    constructor(
+        environment: AWSEnvironment,
+        identifier: PolicyIdentifier,
+        expectations?: ManagedPolicyExpectation
+    ) {
         super(environment)
         const {policyArn, policyName} = identifier
+        this.policyExpectations = expectations
         if (policyArn) {
             this.arn = policyArn
             this.name = policyArn.split("/").pop()
@@ -38,6 +44,10 @@ export class ManagedPolicy extends IAMResource {
         }
         const requestOutput = await this.client.send(new GetPolicyVersionCommand(params))
         this.policyDocument = requestOutput.PolicyVersion
+        console.log("--1--");
+        
+        console.log(requestOutput.PolicyVersion);
+        
         return this.policyDocument
     }
     async getArn() {
@@ -49,6 +59,15 @@ export class ManagedPolicy extends IAMResource {
         return this.arn
     }
     async load() {
-
+        await this.getArn()
+        console.log("----------S----------");
+        
+        const makeDocRequest = this.policyExpectations?.PolicyDocumentEvaluation || this.policyExpectations?.PolicyDocumentStatements
+        if (this.policyExpectations?.PolicyData || makeDocRequest) {
+            const policyData = await this.getPolicy()
+            if ( makeDocRequest ) {
+                await this.getPolicyDocument(policyData?.DefaultVersionId || "v1")
+            }
+        }
     }
 }

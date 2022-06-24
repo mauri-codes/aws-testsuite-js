@@ -36,7 +36,7 @@ export abstract class Resource {
     constructor(environment: AWSEnvironment) {
         this.environment = environment
     }
-    abstract load():void
+    abstract load():Promise<any>
 }
 
 export abstract class IAMResource extends Resource {
