@@ -9,8 +9,10 @@ import {
     ListAttachedRolePoliciesCommand
 } from "@aws-sdk/client-iam";
 import { ManagedPolicy } from "./Policy";
+import { CatchTestError, SuccessfulLoad } from "../../tests";
 
 export class Role extends IAMResource {
+    resourceName: string = Role.name
     roleName: string
     roleExpectations: RoleExpectation | undefined
     roleData: RoleData | undefined
@@ -48,6 +50,7 @@ export class Role extends IAMResource {
         this.inlinePolicies = requestOutput.PolicyNames
         return this.inlinePolicies
     } 
+    @CatchTestError()
     async load() {
         let requests: Promise<any>[] = []
         if (this.roleExpectations?.RoleData) {
@@ -61,5 +64,6 @@ export class Role extends IAMResource {
             requests.push(this.getManagedPolicies())
         }
         await Promise.all(requests)
+        return SuccessfulLoad(this.resourceName)
     }
 }

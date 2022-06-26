@@ -41,6 +41,7 @@ export abstract class Resource {
 
 export abstract class IAMResource extends Resource {
     client: IAMClient
+    abstract resourceName: string
     constructor(environment: AWSEnvironment) {
         super(environment)
         this.client = environment.getAWSClient("iam")

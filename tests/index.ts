@@ -24,14 +24,6 @@ export class AttributeEquality extends Test {
         this.attributes.forEach(attribute => {
             let expected = this.expectations[attribute]
             let found = this.resource[attribute]
-            console.log("---------------------------------");
-            console.log(this.expectations);
-            console.log(this.resource);
-            console.log(attribute);
-            
-            
-            
-            
             if (found === undefined) throw new TestError(NoAttributeFound(attribute, "resource object"))
             if (expected === undefined) throw new TestError(NoAttributeFound(attribute, "expectations object"))
             if (expected !== found) throw new TestError(AttributeMismatch(attribute, expected, found))
@@ -51,10 +43,12 @@ export function CatchTestError() {
             try {
                 return await originalMethod.apply(this, args)
             } catch (error: any) {
+                console.log(error);
+                
                 const response: TestResult = {
                     success: false,
                     message: error.message,
-                    errorCode: error.code
+                    errorCode: error.code || error.Code || error["$metadata"].httpStatusCode
                 }
                 return response
             }
@@ -63,3 +57,8 @@ export function CatchTestError() {
     }
 }
 
+export const SuccessfulLoad: (resource:string) => TestResult =
+    (resource) => ({
+        success: true,
+        message: `${resource} loaded successfully`
+    })

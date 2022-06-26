@@ -6,8 +6,10 @@ import {
     GetPolicyVersionCommand
 } from "@aws-sdk/client-iam";
 import { ManagedPolicyExpectation, PolicyIdentifier } from "../../types/IAM";
+import { CatchTestError, SuccessfulLoad } from "../../tests";
 
 export class ManagedPolicy extends IAMResource {
+    resourceName: string = ManagedPolicy.name
     arn: string | undefined
     name: string | undefined
     policyData: Policy | undefined
@@ -44,10 +46,6 @@ export class ManagedPolicy extends IAMResource {
         }
         const requestOutput = await this.client.send(new GetPolicyVersionCommand(params))
         this.policyDocument = requestOutput.PolicyVersion
-        console.log("--1--");
-        
-        console.log(requestOutput.PolicyVersion);
-        
         return this.policyDocument
     }
     async getArn() {
@@ -58,10 +56,9 @@ export class ManagedPolicy extends IAMResource {
         }
         return this.arn
     }
+    @CatchTestError()
     async load() {
         await this.getArn()
-        console.log("----------S----------");
-        
         const makeDocRequest = this.policyExpectations?.PolicyDocumentEvaluation || this.policyExpectations?.PolicyDocumentStatements
         if (this.policyExpectations?.PolicyData || makeDocRequest) {
             const policyData = await this.getPolicy()
@@ -69,5 +66,6 @@ export class ManagedPolicy extends IAMResource {
                 await this.getPolicyDocument(policyData?.DefaultVersionId || "v1")
             }
         }
+        return SuccessfulLoad(this.resourceName)
     }
 }
