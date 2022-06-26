@@ -1,6 +1,7 @@
 import { IAMClient } from "@aws-sdk/client-iam";
 import { EnvironmentConfig } from "../types";
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
+import { TestResult } from "../types/tests";
 
 type AWSClient = "iam" | "lambda" | "sts"
 type AWSClientsObject = {[key in AWSClient]: any};
@@ -33,10 +34,16 @@ export class AWSEnvironment {
 
 export abstract class Resource {
     environment: AWSEnvironment
+    loadOutput: TestResult | undefined
     constructor(environment: AWSEnvironment) {
         this.environment = environment
     }
-    abstract load():Promise<any>
+    async load() {
+        const loadOutput = await this.loadResource()
+        this.loadOutput = loadOutput
+        return loadOutput
+    }
+    abstract loadResource():Promise<TestResult>
 }
 
 export abstract class IAMResource extends Resource {

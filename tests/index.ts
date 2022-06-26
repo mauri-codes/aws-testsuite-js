@@ -1,31 +1,49 @@
-import { AttributeMismatch, NoAttributeFound, TestError } from "../errors";
+import { AttributeMismatch, NoAttributeFound, ResourceDidNotLoad, TestError } from "../errors";
 import { TestResult } from "../types/tests";
 
 export abstract class Test {
-    abstract run(): Promise<TestResult>
+    resource: any
+    async run(): Promise<TestResult> {
+        if (this.resource.loadOutput === undefined) {
+            throw new TestError(ResourceDidNotLoad())
+        }
+        if (!this.resource.loadOutput.success) {
+            throw new TestError(this.resource.loadOutput)
+        }
+        return {
+            success: true,
+            message: "Success"
+        }
+    }
 }
 interface AttributeEqualityParameters {
     resource: any,
+    resourceDataObject: any,
     expectations: any,
     attributes: string[]
 }
 export class AttributeEquality extends Test {
-    resource: any
+    resourceName: string = "resource"
     expectations: any
     attributes: string[]
+    resourceDataObject: any
     constructor(testAttributes: AttributeEqualityParameters) {
         super()
         this.resource = testAttributes.resource
         this.expectations = testAttributes.expectations
         this.attributes = testAttributes.attributes
+        this.resourceDataObject = testAttributes.resourceDataObject
     }
     @CatchTestError()
-    async run() {
+    async run(): Promise<TestResult> {
+        super.run()
+        
         this.attributes.forEach(attribute => {
             let expected = this.expectations[attribute]
-            let found = this.resource[attribute]
-            if (found === undefined) throw new TestError(NoAttributeFound(attribute, "resource object"))
-            if (expected === undefined) throw new TestError(NoAttributeFound(attribute, "expectations object"))
+            let found = this.resourceDataObject[attribute]
+            
+            if (found === undefined) throw new TestError(NoAttributeFound(attribute, `${this.resourceName} object`))
+            if (expected === undefined) throw new TestError(NoAttributeFound(attribute, `${this.resourceName} expectations`))
             if (expected !== found) throw new TestError(AttributeMismatch(attribute, expected, found))
         });
         let response: TestResult = {
@@ -43,12 +61,11 @@ export function CatchTestError() {
             try {
                 return await originalMethod.apply(this, args)
             } catch (error: any) {
-                console.log(error);
                 
                 const response: TestResult = {
                     success: false,
                     message: error.message,
-                    errorCode: error.code || error.Code || error["$metadata"].httpStatusCode
+                    errorCode: error.code || error.Code
                 }
                 return response
             }

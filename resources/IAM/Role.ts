@@ -1,7 +1,6 @@
 import { AWSEnvironment, IAMResource } from "..";
 import { RoleExpectation } from "../../types/IAM";
 import {
-    IAMClient,
     GetRoleCommand,
     AttachedPolicy,
     Role as RoleData,
@@ -51,7 +50,7 @@ export class Role extends IAMResource {
         return this.inlinePolicies
     } 
     @CatchTestError()
-    async load() {
+    async loadResource () {
         let requests: Promise<any>[] = []
         if (this.roleExpectations?.RoleData) {
             requests.push(this.getRoledData())

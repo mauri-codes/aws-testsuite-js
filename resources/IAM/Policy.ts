@@ -57,7 +57,7 @@ export class ManagedPolicy extends IAMResource {
         return this.arn
     }
     @CatchTestError()
-    async load() {
+    async loadResource() {
         await this.getArn()
         const makeDocRequest = this.policyExpectations?.PolicyDocumentEvaluation || this.policyExpectations?.PolicyDocumentStatements
         if (this.policyExpectations?.PolicyData || makeDocRequest) {

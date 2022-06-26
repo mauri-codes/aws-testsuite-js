@@ -23,3 +23,9 @@ export const AttributeMismatch: (attribute: string, expected: any, found: any) =
         code: AttributeMismatch.name,
         message: `Expected attribute ${attribute} to be ${expected}. Found ${found}`
     })
+
+export const ResourceDidNotLoad: () => ErrorDescription =
+    () => ({
+        code: ResourceDidNotLoad.name,
+        message: "Resource did not load"
+    })
