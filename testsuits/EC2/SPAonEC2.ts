@@ -51,7 +51,6 @@ export class SinglePageAppOnEC2 extends TestSuite<SinglePageAppOnEC2Resources> {
             role
         ]
         const resourcesOutput = await Promise.all(this.resourceList.map(resource => resource.load()))
-        
         this.tests = [
             new RoleDataPropertiesTest(role)
         ]

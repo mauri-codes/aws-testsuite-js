@@ -1,9 +1,10 @@
-import { AttributeMismatch, NoAttributeFound, ResourceDidNotLoad, TestError } from "../errors";
+import { AttributeMismatch, ErrorDescription, NoAttributeFound, ResourceDidNotLoad, TestError } from "../errors";
 import { TestResult } from "../types/tests";
 
 export abstract class Test {
     resource: any
-    async run(): Promise<TestResult> {
+    abstract run(): Promise<TestResult>
+    checkLoadOutput(): TestResult {
         if (this.resource.loadOutput === undefined) {
             throw new TestError(ResourceDidNotLoad())
         }
@@ -36,7 +37,7 @@ export class AttributeEquality extends Test {
     }
     @CatchTestError()
     async run(): Promise<TestResult> {
-        super.run()
+        this.checkLoadOutput()
         
         this.attributes.forEach(attribute => {
             let expected = this.expectations[attribute]
@@ -61,11 +62,10 @@ export function CatchTestError() {
             try {
                 return await originalMethod.apply(this, args)
             } catch (error: any) {
-                
                 const response: TestResult = {
                     success: false,
                     message: error.message,
-                    errorCode: error.code || error.Code
+                    errorCode: error.code || error.Code || error?.info?.errorCode
                 }
                 return response
             }
