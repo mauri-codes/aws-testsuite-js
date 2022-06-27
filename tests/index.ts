@@ -1,8 +1,9 @@
-import { AttributeMismatch, ErrorDescription, NoAttributeFound, ResourceDidNotLoad, TestError } from "../errors";
+import { AttributeMismatch, NoAttributeFound, ResourceDidNotLoad, TestError } from "../errors";
 import { TestResult } from "../types/tests";
 
 export abstract class Test {
     resource: any
+    resourceName: string = "resource"
     abstract run(): Promise<TestResult>
     checkLoadOutput(): TestResult {
         if (this.resource.loadOutput === undefined) {
@@ -18,22 +19,21 @@ export abstract class Test {
     }
 }
 interface AttributeEqualityParameters {
-    resource: any,
-    resourceDataObject: any,
-    expectations: any,
+    resource: any
+    resourceDataObject: any
+    expectations: any
     attributes: string[]
 }
 export class AttributeEquality extends Test {
-    resourceName: string = "resource"
     expectations: any
     attributes: string[]
     resourceDataObject: any
-    constructor(testAttributes: AttributeEqualityParameters) {
+    constructor(testParameters: AttributeEqualityParameters) {
         super()
-        this.resource = testAttributes.resource
-        this.expectations = testAttributes.expectations
-        this.attributes = testAttributes.attributes
-        this.resourceDataObject = testAttributes.resourceDataObject
+        this.resource = testParameters.resource
+        this.expectations = testParameters.expectations
+        this.attributes = testParameters.attributes
+        this.resourceDataObject = testParameters.resourceDataObject
     }
     @CatchTestError()
     async run(): Promise<TestResult> {

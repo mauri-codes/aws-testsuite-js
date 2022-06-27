@@ -29,15 +29,18 @@ export interface ManagedPolicyExpectation {
         AttachmentCount?: number
         Description?: string
     }
-    PolicyDocumentStatements?: {
-        Id: string
-        Effect: "Allow" | "Deny"
-        Action: string | string[]
-        Resource: string | string[]
-    }[]
-    PolicyDocumentEvaluation?: {
-        Effect: "Allow" | "Deny"
-        Action: string | string[]
-        Resource: string | string[]        
-    }[]
+    PolicyDocumentStatements?: PolicyStatement[]
+    PolicyDocumentEvaluation?: PolicyStatement[]
+}
+
+export interface PolicyStatement {
+    Sid?: string
+    Effect: "Allow" | "Deny"
+    Action: string | string[]
+    Resource: string | string[]
+}
+
+export interface AWSPolicyDocument {
+    Version: string
+    Statement: PolicyStatement[]
 }
