@@ -3,15 +3,18 @@ import { AWSEnvironment, EC2Resource } from "..";
 import { TestError } from "../../errors";
 import { MultipleNamedInstancesFound, NamedInstanceNotFound } from "../../errors/EC2";
 import { CatchTestError, SuccessfulLoad } from "../../tests";
+import { RoleExpectations } from "../../types/EC2";
 import { TestResult } from "../../types/tests";
 
 export class EC2Instance extends EC2Resource {
     resourceName: string = EC2Instance.name
     instanceName: string
     instanceData: Instance | undefined
-    constructor(environment: AWSEnvironment, instanceName: string, expectations?:{}) {
+    roleExpectations: RoleExpectations
+    constructor(environment: AWSEnvironment, instanceName: string, expectations:RoleExpectations) {
         super(environment)
         this.instanceName = instanceName
+        this.roleExpectations = expectations
     }
     async describeInstance() {
         const {Reservations} = await this.client.send(new DescribeInstancesCommand({
@@ -28,6 +31,7 @@ export class EC2Instance extends EC2Resource {
         if (Instances === undefined || Instances.length === 0) throw new TestError(NamedInstanceNotFound(this.instanceName))
         if (Instances.length > 1) throw new TestError(MultipleNamedInstancesFound(this.instanceName))
         this.instanceData = Instances[0]
+        
         return this.instanceData
     }
     @CatchTestError()

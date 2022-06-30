@@ -146,11 +146,9 @@ export class EvaluatePolicyDocument extends PolicyStatementsTest {
             })
             
         })
-        
         return {
             success: true,
             message: "All statements pass the evaluation"
         }
-        
     }
 }

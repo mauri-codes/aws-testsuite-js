@@ -45,7 +45,7 @@ export class AttributeEquality extends Test {
             
             if (found === undefined) throw new TestError(NoAttributeFound(attribute, `${this.resourceName} object`))
             if (expected === undefined) throw new TestError(NoAttributeFound(attribute, `${this.resourceName} expectations`))
-            if (expected !== found) throw new TestError(AttributeMismatch(attribute, expected, found))
+            if (expected !== "*" && expected !== found) throw new TestError(AttributeMismatch(attribute, expected, found))
         });
         let response: TestResult = {
             success: true,
