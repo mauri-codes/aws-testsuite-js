@@ -40,6 +40,13 @@ export interface PolicyStatement {
     Resource: string | string[]
 }
 
+export interface OnlyArrayPolicyStatment {
+    Sid?: string
+    Effect: "Allow" | "Deny"
+    Action: string[]
+    Resource: string[]
+}
+
 export interface AWSPolicyDocument {
     Version: string
     Statement: PolicyStatement[]

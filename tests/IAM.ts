@@ -3,7 +3,7 @@ import { TestError } from "../errors";
 import { PolicyEvaluationFailed, PolicyEvaluationSuccededError, PolicyStatementNotFound } from "../errors/IAM";
 import { ManagedPolicy } from "../resources/IAM/Policy";
 import { Role } from "../resources/IAM/Role";
-import { AWSPolicyDocument, PolicyStatement } from "../types/IAM";
+import { AWSPolicyDocument, OnlyArrayPolicyStatment, PolicyStatement } from "../types/IAM";
 import { TestResult } from "../types/tests";
 import {
     SimulateCustomPolicyCommand,
@@ -31,20 +31,27 @@ export class RoleDataPropertiesTest extends AttributeEquality {
 export abstract class PolicyStatementsTest extends Test {
     policyDocumentEncoded: string
     policyDocument: AWSPolicyDocument | undefined
+    onlyArrayPolicyStatement: OnlyArrayPolicyStatment[] | undefined
     expectationStatements: PolicyStatement[]
-    constructor(testParameters: PolicyStatementsTestParameters) {
+    onlyArrayExpectationStatements: OnlyArrayPolicyStatment[] | undefined
+    constructor({resource, policyDocument, statements}: PolicyStatementsTestParameters) {
         super()
-        this.resource = testParameters.resource
-        this.policyDocumentEncoded = testParameters.policyDocument
-        this.expectationStatements = testParameters.statements
+        this.resource = resource
+        this.policyDocumentEncoded = policyDocument
+        this.expectationStatements = statements
     }
     preProcessStatements() {
-        this.expectationStatements = this.expectationStatements.map(statement => ({
+        this.onlyArrayExpectationStatements = this.expectationStatements.map(statement => ({
             ...statement,
             Action: this.returnArray(statement.Action),
             Resource: this.returnArray(statement.Resource)
         }))
         this.policyDocument = JSON.parse(decodeURIComponent(this.policyDocumentEncoded))
+        this.onlyArrayPolicyStatement = (this.policyDocument?.Statement || []).map(statement =>({
+            ...statement,
+            Action: this.returnArray(statement.Action),
+            Resource: this.returnArray(statement.Resource)
+        }))
     }
     returnArray(strOrArray: string | string[]): string[] {
         if (typeof strOrArray === "string") strOrArray = [strOrArray]
@@ -58,41 +65,34 @@ interface PolicyStatementsTestParameters {
     statements: PolicyStatement[]
 }
 export class CheckPolicyStatements extends PolicyStatementsTest {
+
     constructor(testParameters: PolicyStatementsTestParameters) {
         super(testParameters)        
     }
-    compareStatements(statement: PolicyStatement) {
-        return this.policyDocument?.Statement.find(docStatement => {
+    compareStatements(statement: OnlyArrayPolicyStatment) {
+        return (this.onlyArrayPolicyStatement || []).find(docStatement => {
             if (statement.Sid && statement.Sid !== docStatement.Sid) return false
             if (statement.Effect !== docStatement.Effect) return false
-            if (!this.compareListOfStrings(docStatement.Effect, statement.Effect)) return false
+            if (!this.compareListOfStrings(docStatement.Resource, statement.Resource)) return false
             if (!this.compareListOfStrings(docStatement.Action, statement.Action)) return false
             return true
         })
     }
-    compareListOfStrings(list: string | string[], expectationList: string | string[]): boolean {
-        if (typeof list === "string" && typeof expectationList === "string") {
-            return list === expectationList
-        }
-        if (typeof list === "string" && expectationList !== "string") {
-            return expectationList.length === 1 && (expectationList as string[]).pop() === list
-        }
-        if (typeof list !== "string" && expectationList === "string") {
-            return list.find(str => expectationList === str) !== undefined
-        }
-        (expectationList as string[]).forEach(expectation => {
-            if ((list as string[]).find(str => str === expectation) === undefined) return false
+    compareListOfStrings(list: string[], expectationList: string[]): boolean {
+        let found = true
+        expectationList.forEach(expectation => {
+            if (list.find(str => str === expectation) === undefined) found = false
         });
-        return true
+        return found
     }
     @CatchTestError()
     async run(): Promise<TestResult> {
         this.checkLoadOutput()
         this.preProcessStatements()
         this.policyDocument = JSON.parse(decodeURIComponent(this.policyDocumentEncoded))
-        this.expectationStatements.forEach(statement => {
+        ;(this.onlyArrayExpectationStatements || []).forEach(statement => {
             if (!this.compareStatements(statement)) throw new TestError(PolicyStatementNotFound(this.resourceName, statement))
-        });
+        })
         return {
             success: true,
             message: "All statements are present in the policy document"
@@ -120,9 +120,8 @@ export class EvaluatePolicyDocument extends PolicyStatementsTest {
         this.checkLoadOutput()
         this.preProcessStatements()
         const iamClient: IAMClient = this.resource.environment.getAWSClient("iam")
-        this.policyDocument = JSON.parse(decodeURIComponent(this.policyDocumentEncoded))
 
-        const requests = this.expectationStatements.map(({Action, Resource, Effect}) => {
+        const requests = (this.onlyArrayExpectationStatements ||[]).map(({Action, Resource, Effect}) => {
             let params: SimulateCustomPolicyCommandInput = {
                 ActionNames: Action as string[],
                 PolicyInputList: [decodeURIComponent(JSON.stringify(this.policyDocument))],
@@ -139,7 +138,7 @@ export class EvaluatePolicyDocument extends PolicyStatementsTest {
             })
             return mappedEvaluation
         })
-        this.expectationStatements.forEach(({Action, Effect}, index) => {
+        ;(this.onlyArrayExpectationStatements || []).forEach(({Action, Effect}, index) => {
             let evaluationObj = mappedResponses[index]
             ;(Action as string[]).forEach((action) => {
                 if (evaluationObj[action] === "allowed" && Effect === "Deny") throw new TestError(PolicyEvaluationSuccededError(this.resourceName, action))
