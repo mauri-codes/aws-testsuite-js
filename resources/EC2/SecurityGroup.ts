@@ -13,9 +13,12 @@ import {
     SecurityGroupExpectations,
     SecurityGroupIdentifier
 } from "../../types/EC2/SecurityGroup";
+import { TestError } from "../../errors";
+import { MultipleSecurityGroupsFound, NoSecurityGroupFound } from "../../errors/EC2/SecurityGroup";
 
 export class SecurityGroup extends EC2Resource {
     resourceName: string = SecurityGroup.name
+    sgId: string | undefined
     sgIdentifier: SecurityGroupIdentifier
     sgBaseData: AWSSecurityGroup | undefined
     sgFound: number | undefined
@@ -43,43 +46,64 @@ export class SecurityGroup extends EC2Resource {
         return this.sgRules
     }
 
+    getGroupIdFilter(groupId?: string) {
+        if (groupId) {
+            this.sgId = groupId
+        }
+        return this.getSimpleFilter("group-id", [this.sgId || ""])
+    }
+
+    getSimpleFilter(Name:string, Values: string[]) {
+        return {Name, Values}
+    }
+
+    getIdentifierSummary () {
+        let vpcId, name, tags
+        let { securityGroupId, search } = this.sgIdentifier
+        if (search) {
+            ({ vpcId, name, tags } = search)
+        }
+        let summary = [ securityGroupId, vpcId, name, tags ]
+        return summary.filter(element => element != null)
+    }
+
     async describeSecurityGroup() {
-        let vpcData = {}
-        if (this.sgIdentifier.vpcId != null) {
-            vpcData = {
-                Name: "vpc-id",
-                Values: [
-                    this.sgIdentifier.vpcId || ""
-                ]
+        let Filters = []
+        if (this.sgIdentifier.securityGroupId) {
+            Filters.push(this.getGroupIdFilter(this.sgIdentifier.securityGroupId))
+        } else {
+            if (this.sgIdentifier?.search?.vpcId) {
+                Filters.push(this.getSimpleFilter("vpc-id", [this.sgIdentifier.search.vpcId]))
+            }
+            if (this.sgIdentifier?.search?.name) {
+                Filters.push(this.getSimpleFilter("group-name", [this.sgIdentifier.search.name]))
+            }
+            let tags = this.sgIdentifier?.search?.tags
+            if (tags) {
+                tags.forEach((tag) => {
+                    Filters.push(this.getSimpleFilter(`tag:${tag.Name}`, [tag.Value]))
+                })
             }
         }
-        const params:DescribeSecurityGroupsCommandInput = {
-            Filters: [
-                {
-                    ...vpcData
-                },
-                {
-                    Name: "group-name",
-                    Values: [
-                        this.sgIdentifier.name
-                    ]
-                }
-            ]
-        }
+        const params:DescribeSecurityGroupsCommandInput = { Filters }
         const request = await this.client.send(new DescribeSecurityGroupsCommand(params))
+
         this.sgFound = request.SecurityGroups?.length
         if (request.SecurityGroups?.length === 1) {
             this.sgBaseData = request.SecurityGroups.pop()
+            this.sgId = this.sgBaseData?.GroupId
+        } else {
+            if (this.sgFound === 0) throw new TestError(NoSecurityGroupFound(this.getIdentifierSummary().toString()))
+            else throw new TestError(MultipleSecurityGroupsFound(this.getIdentifierSummary().toString()))
         }
         return this.sgBaseData
     }
     @CatchTestError()
     async loadResource(): Promise<TestResult> {
         await this.describeSecurityGroup()
-        if (this.sgFound === 1) {
-            await this.describeSecurityGroupRules()
-            console.log(this.sgRules);
-        }
+        console.log(this.sgBaseData);
+        await this.describeSecurityGroupRules()
+        console.log(this.sgRules);
         return SuccessfulLoad(this.resourceName)
     }
 }

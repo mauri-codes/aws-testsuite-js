@@ -6,3 +6,8 @@ export interface EnvironmentConfig {
     },
     region?: string
 }
+
+export interface Tag {
+    Name: string
+    Value: string
+}

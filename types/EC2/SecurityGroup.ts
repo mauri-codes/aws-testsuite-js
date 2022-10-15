@@ -1,3 +1,5 @@
+import { Tag } from ".."
+
 export interface SecurityGroupRule {
     IpProtocol?: string
     FromPort?: string
@@ -8,8 +10,12 @@ export interface SecurityGroupRule {
     Description?: string
 }
 export interface SecurityGroupIdentifier {
-    vpcId?: string
-    name: string
+    securityGroupId?: string
+    search?: {
+        vpcId?: string
+        name?: string
+        tags?: Tag[]
+    }
 }
 export interface SecurityGroupExpectations {
     SecurityGroupData?: {
