@@ -53,15 +53,11 @@ export class SecurityGroup extends EC2Resource {
         return this.getSimpleFilter("group-id", [this.sgId || ""])
     }
 
-    getSimpleFilter(Name:string, Values: string[]) {
-        return {Name, Values}
-    }
-
     getIdentifierSummary () {
         let vpcId, name, tags
         let { securityGroupId, search } = this.sgIdentifier
         if (search) {
-            ({ vpcId, name, tags } = search)
+            ;({ vpcId, name, tags } = search)
         }
         let summary = [ securityGroupId, vpcId, name, tags ]
         return summary.filter(element => element != null)

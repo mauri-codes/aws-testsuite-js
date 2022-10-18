@@ -1,4 +1,6 @@
-export interface RoleExpectations {
+import { Tag } from ".."
+
+export interface EC2InstanceExpectations {
     EC2Data?: {
         ImageId?: string
         InstanceId?: string
@@ -20,5 +22,14 @@ export interface RoleExpectations {
     SecurityGroups?: {
         GroupName?: string
         GroupId?: string
+    }[]
+}
+
+export interface EC2InstanceIdentifier {
+    instanceId?: string
+    search?: {
+        vpcId?: string
+        name?: string
+        tags?: Tag[]
     }
 }

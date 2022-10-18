@@ -1,13 +1,13 @@
 import { ErrorDescription } from ".";
-export const NamedInstanceNotFound: (instanceName: string) => ErrorDescription =
-    (instanceName) => ({
-        code: NamedInstanceNotFound.name,
-        message: `No instance named ${instanceName} found`
+export const InstanceNotFound: (instanceData: string) => ErrorDescription =
+    (instanceData) => ({
+        code: InstanceNotFound.name,
+        message: `No instance with values: [${instanceData}] found`
     }
 )
-export const MultipleNamedInstancesFound: (instanceName: string) => ErrorDescription =
-    (instanceName) => ({
+export const MultipleNamedInstancesFound: (instanceData: string) => ErrorDescription =
+    (instanceData) => ({
         code: MultipleNamedInstancesFound.name,
-        message: `Multiple Instances named ${instanceName} found`
+        message: `Multiple Instances with values ${instanceData} found`
     }
 )

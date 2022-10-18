@@ -49,7 +49,7 @@ export abstract class Test2<ResourceList> {
         this.resources = resources
     }
     compareAttributesTest (resource: Resource, attributes: any, expectations: any, config?: AttributeTestConfig) {
-        let expectationsKeys = Object.keys(expectations)
+        let expectationsKeys = Object.keys(expectations || {})
         if (config) {
             if (config.includeOnly)
                 expectationsKeys = config.includeOnly

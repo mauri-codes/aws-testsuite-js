@@ -63,4 +63,7 @@ export abstract class EC2Resource extends Resource {
         super(environment)
         this.client = environment.getAWSClient("ec2")
     }
+    getSimpleFilter(Name:string, Values: string[]) {
+        return {Name, Values}
+    }
 }
